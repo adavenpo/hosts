@@ -1,0 +1,29 @@
+#! /bin/sh
+
+# NOTE: The first variation reduces to x.tld, but this is bad, since you end up,
+# for instance, killing amazon.com, etc., instead of ads.amazon.com.
+
+python3 updateHostsFile.py -a
+
+#tail -n +22 hosts | \
+#    egrep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' -e 'localhost' | \
+#    cut -d\  -f 2 | \
+#    sed -e 's/^.*\.\([^.]*\.[^.]*\)$/\1/' | \
+#    sort | uniq | \
+#    sed -e 's,^\(.*\)$,address=/\1/0.0.0.0,' > adblock
+
+echo Generating dnsmasq config file from hosts
+tail -n +22 hosts | \
+    egrep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' -e 'localhost' | \
+    cut -d\  -f 2 | \
+    sort | uniq | \
+    sed -e 's,^\(.*\)$,address=/\1/0.0.0.0,' > adblock
+
+#less adblock
+
+echo Installing dnsmasq config file
+sudo cp /etc/dnsmasq.d/adblock ./adblock~
+sudo cp adblock /etc/dnsmasq.d/adblock
+
+echo Restarting dnsmasq
+sudo service dnsmasq restart
