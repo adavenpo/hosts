@@ -27,7 +27,7 @@ Python3 = sys.version_info >= (3,0)
 
 def main():
 
-    s = Template('${description} | [Readme](https://github.com/StevenBlack/hosts/blob/master/${location}readme.md) | [link](https://raw.githubusercontent.com/StevenBlack/hosts/master/${location}hosts) | [link](https://raw.githubusercontent.com/StevenBlack/hosts/master/${location}hosts.zip) | ${fmtentries}')
+    s = Template('${description} | [Readme](https://github.com/StevenBlack/hosts/blob/master/${location}readme.md) | [link](https://raw.githubusercontent.com/StevenBlack/hosts/master/${location}hosts) | [link](https://raw.githubusercontent.com/StevenBlack/hosts/master/${location}hosts.zip) | ${fmtentries} | [link](http://sbc.io/hosts/${location}hosts)')
 
     with open(README_DATA_FILENAME, 'r') as f:
        data = json.load(f)
@@ -49,11 +49,28 @@ def main():
 
         tocRows += s.substitute(data[key]) + "\n"
 
+    rowdefaults = {
+        "name": "",
+        "description": "",
+        "homeurl": "",
+        "frequency": "",
+        "issues": "",
+        "url": ""}
+
+    t = Template('${name} | ${description} |[link](${homeurl}) | [raw](${url}) | ${frequency} ')
 
     for key in keys:
         extensions = key.replace( "-", ", ")
         extensionsStr = "* Extensions: **" + extensions + "**."
         extensionsHeader = "with "+ extensions + " extensions"
+
+        sourceRows = ""
+        sourceList = data[key]["sourcesdata"]
+        for source in sourceList:
+            thisrow = {}
+            thisrow.update(rowdefaults)
+            thisrow.update(source)
+            sourceRows += t.substitute(thisrow) + "\n"
 
         with open(os.path.join(data[key]["location"],README_FILENAME), "wt") as out:
             for line in open(README_TEMPLATE):
@@ -63,6 +80,7 @@ def main():
                 line = line.replace( '@NUM_ENTRIES@', "{:,}".format(data[key]["entries"]))
                 line = line.replace( '@SUBFOLDER@',os.path.join(data[key]["location"], ''))
                 line = line.replace( '@TOCROWS@', tocRows )
+                line = line.replace( '@SOURCEROWS@', sourceRows )
                 out.write( line )
 
 def cmp_keys(item):
